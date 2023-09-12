@@ -5,10 +5,6 @@ namespace CriPakTools
 {
     public class Tools
     {
-
-        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern int memcmp(byte[] b1, byte[] b2, long count);
-
         public Tools()
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
