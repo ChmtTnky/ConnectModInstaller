@@ -82,9 +82,7 @@ namespace ConnectModInstaller
                         asset_dir = DEFAULT_ASSET_DIR;
                 }
             }
-            // if the dir is valid, save it for future runs
             Console.WriteLine("Using " + asset_dir + " for the installation...\n");
-            File.WriteAllText(ASSET_DIR_TXT, asset_dir);
 
             // Check if the asset directory has any cpk files in it
             string[] cpk_paths = Directory.GetFiles(asset_dir, "*.cpk");
@@ -111,6 +109,10 @@ namespace ConnectModInstaller
                 }
             }
 
+            // save the assets dir for future use
+            File.WriteAllText(ASSET_DIR_TXT, asset_dir);
+
+            // Success
             Console.WriteLine("\nSuccess!");
             return true;
         }
