@@ -22,6 +22,8 @@
                 if (Directory.Exists(args[0]))
                     Installer.InstallMods(args[0], args[1]);
             }
+            Console.WriteLine("\n" + "Press any key to close...");
+            Console.ReadKey();
         }
     }
 }

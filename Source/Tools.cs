@@ -1,8 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 
-Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
 namespace CriPakTools
 {
     public class Tools
@@ -13,7 +11,7 @@ namespace CriPakTools
 
         public Tools()
         {
-
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         }
 
         public string ReadCString(BinaryReader br, int MaxLength = -1, long lOffset = -1, Encoding enc = null)

@@ -5,8 +5,9 @@ namespace ConnectModInstaller
     public static class Installer
     {
         private static readonly string ASSET_DIR_TXT = "asset_dir.txt";
+        private static readonly string DEFAULT_ASSET_DIR = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dokapon Kingdom Connect\\assets";
 
-        public static bool InstallMods(string mod_dir, string asset_dir = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dokapon Kingdom Connect\\assets")
+        public static bool InstallMods(string mod_dir, string asset_dir = null)
         {
             // check if mod directory has any files in it
             // generate dictionary of all mod files (file name, file_path)
@@ -20,26 +21,58 @@ namespace ConnectModInstaller
             foreach (string mod_file in mod_files)
                 mods.Add(Path.GetFileName(mod_file), mod_file);
 
-            // check if asset directory is correct
-            // if not, check if the directory was saved form a prior run
-            // else, ask for the directory explicitly through the console
-            // if the asset directory is already correct, save it to file
-            if (!Directory.Exists(asset_dir))
+            // verify the asset dir
+            // if the arg has been set, check if it exists
+            if (asset_dir != null)
             {
-                if (File.Exists(ASSET_DIR_TXT))
-                    asset_dir = File.ReadAllText(ASSET_DIR_TXT).Trim().Replace("\"", "");
-
-                if (!Directory.Exists(asset_dir))
-                    asset_dir = RequestAssetDir();
-
+                // if it doesnt exist, output an error
                 if (!Directory.Exists(asset_dir))
                 {
-                    ProgramHelpers.OutputError("Asset directory cannot be found.");
+                    ProgramHelpers.OutputError("Asset directory does not exist.");
                     return false;
                 }
             }
-            else
-                File.WriteAllText(ASSET_DIR_TXT, asset_dir);
+            else // if no arg has been passed
+            {
+                // if dir has been saved from a prior run
+                if (File.Exists(ASSET_DIR_TXT))
+                {
+                    // read from saved file
+                    asset_dir = File.ReadAllText(ASSET_DIR_TXT).Trim().Replace("\"", "");
+                    // if saved dir is invalid, request a path from the user
+                    if (!Directory.Exists(asset_dir))
+                        asset_dir = RequestAssetDir();
+                    // if requested path is still invalid, output an error and exit
+                    if (!Directory.Exists(asset_dir))
+                    {
+                        ProgramHelpers.OutputError("Asset directory does not exist.");
+                        // delete saved dir
+                        File.Delete(ASSET_DIR_TXT);
+                        return false;
+                    }
+                }
+                // if dir hasnt been saved
+                else
+                {
+                    // check if the default path is valid
+                    if (!Directory.Exists(DEFAULT_ASSET_DIR))
+                    {
+                        // if default is invalid, request path from the user
+                        asset_dir = RequestAssetDir();
+                        // if requested path is still invalid, output an error and exit
+                        if (!Directory.Exists(asset_dir))
+                        {
+                            ProgramHelpers.OutputError("Asset directory does not exist.");
+                            return false;
+                        }
+                    }
+                    else // if it is valid
+                        asset_dir = DEFAULT_ASSET_DIR;
+                }
+            }
+            // if the dir is valid, save it for future runs
+            Console.WriteLine("Using " + asset_dir + " for the installation...\n");
+            File.WriteAllText(ASSET_DIR_TXT, asset_dir);
 
             // Check if the asset directory has any cpk files in it
             string[] cpk_paths = Directory.GetFiles(asset_dir, "*.cpk");
@@ -52,30 +85,28 @@ namespace ConnectModInstaller
             // patch all cpks in the asset directory
             foreach (string cpk_path in cpk_paths)
             {
-                Console.WriteLine("\n" +
-                    "Patched " + PatchCPK(cpk_path, mods).ToString() + " files in " + Path.GetFileName(cpk_path));
+                Console.WriteLine("Patched " + PatchCPK(cpk_path, mods).ToString() + " files in " + Path.GetFileName(cpk_path));
             }
 
             // verify each cpk creation
             // then move cpks into the assets directory
             foreach (string cpk_path in cpk_paths)
             {
-                if (File.Exists(cpk_path))
+                if (File.Exists(Path.GetFileName(cpk_path)))
                 {
-                    File.Move(cpk_path, asset_dir + Path.GetFileName(cpk_path), true);
+                    File.Move(Path.GetFileName(cpk_path), cpk_path, true);
                 }
             }
 
-            Console.WriteLine("\n" +
-                "Success!\n");
+            Console.WriteLine("\n" + "Success!");
             return true;
         }
 
         // ask the user for their asset directory
         // ask to save the path to speed up future installs
-        private static string RequestAssetDir()
+        private static string? RequestAssetDir()
         {
-            Console.WriteLine("\n" +
+            Console.WriteLine(
                 "Please input the path of your game installation's \"assets\" directory.\n" +
                 "To find the path, in Steam, right click on the game in your library, then click Manage, then Browse Local Files.\n" +
                 "Then,to obtain the path of the \"assets\" folder, click on it, then shift + right click it and select Copy as Path.\n" +
@@ -83,15 +114,7 @@ namespace ConnectModInstaller
                 "Assets Path: ");
             string asset_dir = Console.ReadLine().Trim().Replace("\"", "");
             if (Directory.Exists(asset_dir))
-            {
-                Console.WriteLine("\n" +
-                    "Would you like to save this directory for automatic use during future installations? [Yes or No]: ");
-                if (Console.ReadLine().Trim().ToLowerInvariant() is "yes" or "y" or "1")
-                {
-                    File.WriteAllText(ASSET_DIR_TXT, asset_dir);
-                }
                 return asset_dir;
-            }
             return null;
         }
 
@@ -110,8 +133,7 @@ namespace ConnectModInstaller
             BinaryReader oldFile = new BinaryReader(File.OpenRead(cpk_name));
 
             // setup i/o strings
-            FileInfo fi = new FileInfo(cpk_name);
-            string outputName = fi.FullName + ".cpk";
+            string outputName = Path.GetFileName(cpk_file);
 
             // prepare new cpk and get all file entries
             BinaryWriter newCPK = new BinaryWriter(File.OpenWrite(outputName));
