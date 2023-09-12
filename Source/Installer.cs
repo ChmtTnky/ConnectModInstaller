@@ -31,7 +31,7 @@ namespace ConnectModInstaller
                 else
                     Console.WriteLine($"Duplicate file found at {mod_file}");
             }
-            Console.WriteLine($"\nInstalling {mods.Count} files...");
+            Console.WriteLine($"\nInstalling {mods.Count} {(mods.Count == 1 ? "file" : "files")}...");
 
             // verify the asset dir
             // if the arg has been set, check if it exists
@@ -122,7 +122,7 @@ namespace ConnectModInstaller
             Console.WriteLine(
                 "Please input the path of your game installation's \"assets\" directory.\n" +
                 "To find the path, in Steam, right click on the game in your library, then click Manage, then Browse Local Files.\n" +
-                "Then,to obtain the path of the \"assets\" folder, click on it, then shift + right click it and select Copy as Path.\n" +
+                "Then, to obtain the path of the \"assets\" folder, click on it, then shift + right click it and select Copy as Path.\n" +
                 "Then paste and enter it into this console.\n" +
                 "Assets Path: ");
             string asset_dir = Console.ReadLine().Trim().Replace("\"", "");

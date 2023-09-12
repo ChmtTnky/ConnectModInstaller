@@ -4,10 +4,10 @@
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("Dokapon Kingdom Connect PC Mod Installer");
             if (args.Length == 0)
             {
                 Console.WriteLine(
-                    "Dokapon Kingdom Connect PC Mod Installer\n" +
                     "To install a mod, drag and drop the folder of mod files onto the ConnectModInstaller.\n" +
                     "Command-line Usage:\n" +
                     "ConnectModInstaller.exe <Mods Directory> <optional: Assets Directory>");
