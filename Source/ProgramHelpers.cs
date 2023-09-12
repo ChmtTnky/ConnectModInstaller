@@ -4,7 +4,7 @@
     {
         public static void OutputError(string desc)
         {
-            Console.WriteLine("\nError: " + desc + "\n");
+            Console.WriteLine($"\nError: {desc}");
         }
     }
 }

@@ -11,6 +11,11 @@ namespace ConnectModInstaller
         {
             // check if mod directory has any files in it
             // generate dictionary of all mod files (file name, file_path)
+            if (!Directory.Exists(mod_dir))
+            {
+                ProgramHelpers.OutputError("Mod directory does not exist.");
+                return false;
+            }
             string[] mod_files = Directory.GetFiles(mod_dir, "*.*", SearchOption.AllDirectories);
             if (mod_files.Length == 0)
             {
@@ -19,7 +24,14 @@ namespace ConnectModInstaller
             }
             Dictionary<string, string> mods = new Dictionary<string, string>();
             foreach (string mod_file in mod_files)
-                mods.Add(Path.GetFileName(mod_file), mod_file);
+            {
+                // check for duplicate mod files
+                if (!mods.ContainsKey(Path.GetFileName(mod_file)))
+                    mods.Add(Path.GetFileName(mod_file), mod_file);
+                else
+                    Console.WriteLine($"Duplicate file found at {mod_file}");
+            }
+            Console.WriteLine($"\nInstalling {mods.Count} files...");
 
             // verify the asset dir
             // if the arg has been set, check if it exists
@@ -85,7 +97,8 @@ namespace ConnectModInstaller
             // patch all cpks in the asset directory
             foreach (string cpk_path in cpk_paths)
             {
-                Console.WriteLine("Patched " + PatchCPK(cpk_path, mods).ToString() + " files in " + Path.GetFileName(cpk_path));
+                int patched = PatchCPK(cpk_path, mods);
+                Console.WriteLine($"Patched {patched} {(patched == 1 ? "file" : "files")} in {Path.GetFileName(cpk_path)}");
             }
 
             // verify each cpk creation
@@ -98,7 +111,7 @@ namespace ConnectModInstaller
                 }
             }
 
-            Console.WriteLine("\n" + "Success!");
+            Console.WriteLine("\nSuccess!");
             return true;
         }
 

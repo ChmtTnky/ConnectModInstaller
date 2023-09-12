@@ -6,11 +6,11 @@
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("\n" +
+                Console.WriteLine(
                     "Dokapon Kingdom Connect PC Mod Installer\n" +
                     "To install a mod, drag and drop the folder of mod files onto the ConnectModInstaller.\n" +
                     "Command-line Usage:\n" +
-                    "ConnectModInstaller.exe <Mods Directory> <optional: Assets Directory>\n");
+                    "ConnectModInstaller.exe <Mods Directory> <optional: Assets Directory>");
             }
             else if (args.Length == 1)
             {
@@ -22,7 +22,7 @@
                 if (Directory.Exists(args[0]))
                     Installer.InstallMods(args[0], args[1]);
             }
-            Console.WriteLine("\n" + "Press any key to close...");
+            Console.WriteLine("\nPress any key to close...");
             Console.ReadKey();
         }
     }
