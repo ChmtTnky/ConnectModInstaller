@@ -10,15 +10,16 @@ namespace ConnectModInstaller
 		public static readonly string MODS_ASSETS_DIR_NAME = "Assets";
 		public static readonly string MODS_CODE_DIR_NAME = "Codes";
 		public static readonly string MODS_SOUND_DIR_NAME = "Sounds";
-		private static readonly string GAME_ASSETS_DIR_NAME = "assets";
-		private static readonly string GAME_EXE_FILE_NAME = "DkkStm.exe";
+		public static readonly string MODS_HEX_DIR_NAME = "Hex";
+        public static readonly string GAME_ASSETS_DIR_NAME = "assets";
+        public static readonly string GAME_EXE_FILE_NAME = "DkkStm.exe";
 
-		public static (bool, bool, bool) InstallMods(string? exe_path = null)
+		public static bool[]? InstallMods(string? exe_path = null)
 		{
 			// get and verify the path of the game exe
 			var get_exe = GetEXEPath(exe_path);
 			if (get_exe.has_error)
-				return (false, false, false);
+				return null;
 			exe_path = get_exe.exe_path;
 			string? game_dir = Path.GetDirectoryName(exe_path);
 			Log.WriteLine($"Using \"{game_dir}\" for the installation...\n");
@@ -26,13 +27,15 @@ namespace ConnectModInstaller
 			// run the individual install functions
 			bool assets_success = InstallAssetMods(game_dir);
 			bool codes_success = InstallCodeMods(game_dir);
-			bool sounds_success = InstallSoundMods();
+            bool hex_success = InstallHexEdits(exe_path);
+            bool sounds_success = InstallSoundMods();
 
             // save the game path for future use
             File.WriteAllText(SAVED_INSTALL_TXT, exe_path);
 
 			Log.WriteLine("Done.\n");
-			return (assets_success, codes_success, sounds_success);
+			bool[] output = { assets_success, codes_success, hex_success, sounds_success };
+			return output;
 		}
 
 		private static (string? exe_path, bool has_error) GetEXEPath(string? cli_arg)
@@ -148,7 +151,7 @@ namespace ConnectModInstaller
 			// check for mods
 			if (edit_folder_paths.Length == 0)
 			{
-                Log.OutputError($"Codes folder has no subdirectories\nSkipping code mods...\n");
+                Log.WriteLine($"Codes folder has no subdirectories\nSkipping code mods...\n");
                 return false;
             }
 			Log.WriteLine($"Installing code mods...");
@@ -193,6 +196,12 @@ namespace ConnectModInstaller
             apply_codes?.WaitForExit();
             apply_codes?.Close();
             return true;
+		}
+
+		private static bool InstallHexEdits(string exe_path)
+		{
+			int total_mods = HexEditor.ApplyMods(MODS_HEX_DIR_NAME, exe_path);
+			return (total_mods > 0);
 		}
 
         // Modified version of patching function. Now does batch patching rather than single files.
