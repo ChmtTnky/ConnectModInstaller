@@ -1,0 +1,15 @@
+Make sure to place the entire folder for each mod here.
+Files with the same name will be in each mod folder, so DO NOT mix them.
+Your folder should look like:
+
+ModName1
+ModName2
+ModName3
+...
+
+Each folder should have a mod.bin, variables.txt, and functions.txt file.
+The program looks only at the immediate files in each folder, so make sure the files aren't in any subfolders.
+If two mods edit the same code, the last one applied will take priority.
+Please check the descriptions of the mods you install to make sure they are not incompatible.
+The log will list out which mods were applied and which were ignored.
+If you install the same mod twice, you WILL cause bugs, so always verify the integrity of your game files in Steam before installing any code mods.

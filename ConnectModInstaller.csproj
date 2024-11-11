@@ -1,22 +1,70 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ApplicationIcon>ConnectModInstaller.ico</ApplicationIcon>
+	<OutputType>Exe</OutputType>
+	<TargetFramework>net8.0</TargetFramework>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<ApplicationIcon>ConnectModInstaller.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="ConnectModInstaller.ico" />
+	<Content Include="ConnectModInstaller.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0">
-      <TreatAsUsed>true</TreatAsUsed>
-    </PackageReference>
+	<PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0">
+	  <TreatAsUsed>true</TreatAsUsed>
+	</PackageReference>
   </ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="criatomencd\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="criatomencd\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="vgmstream\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="vgmstream\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="dkcedit\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="dkcedit\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Assets\" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="Assets\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Folder Include="Codes\" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="Codes\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
 </Project>
