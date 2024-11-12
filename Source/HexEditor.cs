@@ -30,7 +30,7 @@ namespace ConnectModInstaller
 
 			// we need this to be always sorted in order to have a smooth write later
 			// writing usually takes more time than reading so this is important
-			SortedSet<ModHeader> mods = [];
+			List<ModHeader> mods = [];
 			// this reader is used for every mod file in the array
 			BinaryReader mod_reader;
 			// open the exe for later use
@@ -95,12 +95,8 @@ namespace ConnectModInstaller
 					// set name
 					header.file_path = mod_path_iter;
 
-					// ensure the mod is added to the sorted set. the only reason this should fail is if the user is out of memory.
-					if (!mods.Add(header))
-					{
-						Log.WriteToLog($"Failed to add \"{mod_path_iter}\" to the list\n");
-						break;
-					}
+					// add the mod to the list of edits
+					mods.Add(header);
 				}
 
 				// we no longer need the mod file
@@ -108,7 +104,8 @@ namespace ConnectModInstaller
 				mod_reader.Close();
 			}
 
-			// iterate over the sorted set of mods
+			// iterate over the sorted list of mods
+			mods = mods.OrderBy(x => x.exe_offset).ToList();
 			foreach (ModHeader mod in mods)
 			{
 				mods.AsParallel().ForAll(other_mod =>
