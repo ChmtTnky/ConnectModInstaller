@@ -2,9 +2,18 @@
 A simple program that installs mods for Dokapon Kingdom: Connect PC/Steam.
 
 ## Basic Usage
-Place all of your mods in their respective folder by type, then run the installer. The installer will ask you for your game EXE path, and provide instructions on how to find that.
+Place all of your desired mods in their respective folder by type, then run the installer. The installer will ask you for your game EXE path, and provide instructions on how to find that. It will then output information about the installation's progress in the console. When it finishes, it will say "Done", and ask for user input before closing. If you have used the installer before, it will automatically run using a backup executable from your first use.
 
 ***If you find any bugs, please let me know as soon as possible!***
+
+## General Notes
+ - To uninstall your mods, you have to verify the integrity of your game files in Steam, or reinstall the game.
+ - The installer will backup your EXE and the location of it to speed up future use.
+ - Duplicate asset files are reported in the console. The first of each duplicate found is patched, the rest are ignored.
+ - Duplicate code mods are not reported, so they may cause hard-to-notice bugs.
+ - Duplicate hex edits are reported in the console. The installer will apply all edits in spite of conflicts.
+ - The CPKs are **NOT** encoded in the exact same way as the originals, so there is a chance that they will cause bugs even without any mods.
+ - If you find a bug, please check the log for more info as to what happened.
 
 ## Notes for Modders
 
@@ -26,27 +35,20 @@ Place all of your mods in their respective folder by type, then run the installe
 ### Hex Edits
  - Hex edits are raw binary edits to the *unmodified* executable, applied before code mods.
  - Hex edits use a custom .hex format with the following specification (little endian):
- -- 8 bytes: Starting offset
- -- 8 bytes: Size of data
- -- X bytes: Data to write at the offset
- -- ... repeat ...
+```
+ 8 bytes: Starting offset
+ 8 bytes: Size of data
+ X bytes: Data to write at the offset
+ ... repeat ...
+```
  - The installer will overwrite data starting at the offset with a size number of bytes specified by the data section.
  - It will then check the remaining bytes to find more locations to modify.
  - There is no limit to the number of bytes or locations you can edit, however you cannot edit data outside the size of the EXE.
- - The data section must have the exact same size as the amoutn specified, or else it will break.
+ - The data section must have the exact same size as the amount specified, or else it will break.
  - The data section is written to the executable in the order specified in the .hex file.
  - Conflicting edits will be noted by the installer, but they will not prevent the edits from being applied.
  - Your mod file can be named anything as long as it has the .hex extension.
  - The installer will check for all .hex files in the Hex folder, even in subdirectories.
-
-## General Notes
- - To uninstall your mods, you have to verify the integrity of your game files in Steam, or reinstall the game.
- - The installer will backup your EXE and the location of it to speed up future use.
- - Duplicate asset files are reported in the console. The first of each duplicate found is patched, the rest are ignored.
- - Duplicate code mods are not reported, so they may cause hard-to-notice bugs.
- - Duplicate hex edits are reported in the console. The installer will apply all edits in spite of conflicts.
- - The CPKs are **NOT** encoded in the exact same way as the originals, so there is a chance that they will cause bugs even without any mods.
- - If you find a bug, please check the log for more info as to what happened.
 
 ## Future Plans
  - A simple cross-platform GUI
@@ -54,5 +56,5 @@ Place all of your mods in their respective folder by type, then run the installe
  - Support for installing sounds files as WAV files
 
 ## Credits
-CPK editing code is from https://github.com/esperknight/CriPakTools
-DKCedit is from https://github.com/Purrygamer/DKCedit
+ - CPK editing code is from https://github.com/esperknight/CriPakTools
+ - DKCedit is from https://github.com/Purrygamer/DKCedit
