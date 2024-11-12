@@ -25,11 +25,7 @@
                 $"If you want to reset the install location, delete the \"{Installer.SAVED_INSTALL_TXT}\" file.\n" +
                 $"If you want to reset your modifications, reinstall the game or verify the integrity of the game files in Steam.\n");
 
-            // If there are any args, assume the first one is the game exe
-            if (args.Length == 0)
-                Installer.InstallMods();
-            else if (args.Length != 0)
-                Installer.InstallMods(args[0]);
+            Installer.InstallMods();
         }
 
         private static void Debug(string[] args)

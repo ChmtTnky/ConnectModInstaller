@@ -1,4 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
+﻿using System.Text.RegularExpressions;
 
 namespace ConnectModInstaller
 {
@@ -51,11 +51,15 @@ namespace ConnectModInstaller
 						break;
 					}
 
+					byte[] offset_bytes = mod_reader.ReadBytes(8);
+                    if (BitConverter.IsLittleEndian)
+                        Array.Reverse(offset_bytes);
+                    Int64 hex_exe_offset = BitConverter.ToInt64(offset_bytes);
+
 					// create a new instance
 					ModHeader header = new()
 					{
-						// read the exe offset from the mod file
-						exe_offset = mod_reader.ReadInt64()
+						exe_offset = hex_exe_offset
 					};
 
 					// check if the mod would exceed the size of the exe file
@@ -65,18 +69,21 @@ namespace ConnectModInstaller
 						break;
 					}
 
-					// read the size of the following data in the mod
-					header.data_size = mod_reader.ReadInt64();
+                    // read the size of the following data in the mod
+                    byte[] size_bytes = mod_reader.ReadBytes(8);
+                    if (BitConverter.IsLittleEndian)
+                        Array.Reverse(size_bytes);
+                    header.data_size = BitConverter.ToInt64(size_bytes);
 
-					// check if the mod would exceed the size of the exe file
-					if (header.exe_offset + header.data_size >= exe_writer.BaseStream.Length)
+                    // check if the mod would exceed the size of the exe file
+                    if (header.exe_offset + header.data_size >= exe_writer.BaseStream.Length)
 					{
 						Log.WriteToLog($"Exe file length would be exceeded in \"{mod_path_iter}\" at {mod_reader.BaseStream.Position - (sizeof(int) * 2)}\n");
 						break;
 					}
 
 					// check if the size of the data would exceed the size of the mod file
-					if (mod_reader.BaseStream.Position + header.data_size >= mod_reader.BaseStream.Length)
+					if (mod_reader.BaseStream.Position + header.data_size > mod_reader.BaseStream.Length)
 					{
 						Log.WriteToLog($"Mod file length would be exceeded in \"{mod_path_iter}\" at {mod_reader.BaseStream.Position - sizeof(int)}\n");
 						break;
@@ -84,6 +91,9 @@ namespace ConnectModInstaller
 
 					// read the byte data from the mod file
 					header.data = mod_reader.ReadBytes((int)header.data_size);
+
+					// set name
+					header.file_path = mod_path_iter;
 
 					// ensure the mod is added to the sorted set. the only reason this should fail is if the user is out of memory.
 					if (!mods.Add(header))
@@ -101,11 +111,25 @@ namespace ConnectModInstaller
 			// iterate over the sorted set of mods
 			foreach (ModHeader mod in mods)
 			{
+				mods.AsParallel().ForAll(other_mod =>
+				{
+					if (mod.file_path == other_mod.file_path)
+						return;
+					if (mod.exe_offset < other_mod.exe_offset && mod.exe_offset + mod.data_size > other_mod.exe_offset)
+					{
+						Log.OutputError($"Conflict found between {mod.file_path} and {other_mod.file_path}");
+					}
+					else if (mod.exe_offset == other_mod.exe_offset)
+					{
+						Log.OutputError($"Conflict found between {mod.file_path} and {other_mod.file_path}");
+					}
+				});
+
 				// jump to the position declared
 				exe_writer.BaseStream.Position = mod.exe_offset;
 				// overwrite the data
 				exe_writer.Write(mod.data);
-				Log.WriteToLog($"Writing mod data to {mod.exe_offset}...");
+				Log.WriteToLog($"Writing {Path.GetFileName(mod.file_path)}:\n{mod.ToString()}\n");
 			}
 
 			exe_writer.Flush();
@@ -120,6 +144,7 @@ namespace ConnectModInstaller
 		public long exe_offset;
 		public long data_size;
 		public byte[] data;
+		public string file_path;
 
 		public readonly int Compare(ModHeader x, ModHeader y)
 		{
@@ -132,6 +157,15 @@ namespace ConnectModInstaller
 				return 0;
 			}
 			return 1;
+		}
+
+		static string HexView(long value) => Regex.Replace(value.ToString("X").PadLeft(sizeof(long) * 2, '0'), ".{2}", "$0 ");
+
+		public override readonly string ToString()
+		{
+			string result = $"{this.file_path}\n{HexView(this.exe_offset)}\n{HexView(this.data_size)}\n";
+			result += data.Select(a => a.ToString("X").PadLeft(2, '0')).Aggregate((a, b) => $"{a} {b}");
+			return result;
 		}
 	}
 }

@@ -6,63 +6,104 @@ namespace ConnectModInstaller
 {
     public static class Installer
 	{
-		public static readonly string SAVED_INSTALL_TXT = "game_exe.txt";
-		public static readonly string MODS_ASSETS_DIR_NAME = "Assets";
-		public static readonly string MODS_CODE_DIR_NAME = "Codes";
-		public static readonly string MODS_SOUND_DIR_NAME = "Sounds";
-		public static readonly string MODS_HEX_DIR_NAME = "Hex";
-        public static readonly string GAME_ASSETS_DIR_NAME = "assets";
-        public static readonly string GAME_EXE_FILE_NAME = "DkkStm.exe";
+		public static readonly string MODS_DIR_NAME = "Mods";
+		public static readonly string MODS_ASSETS_DIR_NAME = Path.Combine(MODS_DIR_NAME, "Assets");
+		public static readonly string MODS_CODE_DIR_NAME = Path.Combine(MODS_DIR_NAME, "Codes");
+		public static readonly string MODS_SOUND_DIR_NAME = Path.Combine(MODS_DIR_NAME, "Sounds");
+		public static readonly string MODS_HEX_DIR_NAME = Path.Combine(MODS_DIR_NAME, "Hex");
 
-		public static bool[]? InstallMods(string? exe_path = null)
+		public static readonly string GAME_ASSETS_DIR_NAME = "assets";
+		public static readonly string GAME_EXE_FILE_NAME = "DkkStm.exe";
+
+		public static readonly string SAVED_CONTENT_DIR = "Backup";
+        public static readonly string SAVED_INSTALL_TXT = Path.Combine(SAVED_CONTENT_DIR, "game_exe.txt");
+        public static readonly string SAVED_INSTALL_EXE = Path.Combine(SAVED_CONTENT_DIR, GAME_EXE_FILE_NAME);
+
+		public static readonly string HELPER_EXE_DIR_NAME = "RequiredEXEs";
+
+        public static bool[]? InstallMods()
 		{
-			// get and verify the path of the game exe
-			var get_exe = GetEXEPath(exe_path);
-			if (get_exe.has_error)
+			// check for mods folder
+			if (!Directory.Exists(MODS_DIR_NAME))
+			{
+				Log.OutputError("Could not finds Mods folder\nExiting program...");
 				return null;
-			exe_path = get_exe.exe_path;
-			string? game_dir = Path.GetDirectoryName(exe_path);
-			Log.WriteLine($"Using \"{game_dir}\" for the installation...\n");
+			}
+
+			// get and verify the path of the game exe
+			string? true_exe_path = SetUpEXE();
+			if (true_exe_path == null)
+				return null;
+			string? true_game_dir = Path.GetDirectoryName(true_exe_path);
+			Log.WriteLine($"Using \"{true_game_dir}\" for the installation...\n");
+
+			// make copy of backup exe to modify
+			string temp_exe_path = Path.Combine(Directory.GetCurrentDirectory(), GAME_EXE_FILE_NAME);
+            File.Copy(SAVED_INSTALL_EXE, temp_exe_path, true);
 
 			// run the individual install functions
-			bool assets_success = InstallAssetMods(game_dir);
-			bool codes_success = InstallCodeMods(game_dir);
-            bool hex_success = InstallHexEdits(exe_path);
+
+			// assets modifies the raw game files
+			bool assets_success = InstallAssetMods(true_game_dir);
+
+			// sounds extracts then modifies the raw game files
             bool sounds_success = InstallSoundMods();
 
-            // save the game path for future use
-            File.WriteAllText(SAVED_INSTALL_TXT, exe_path);
+			// hex edits modifies the temp exe first
+            bool hex_success = InstallHexEdits(Path.Combine(Directory.GetCurrentDirectory(), GAME_EXE_FILE_NAME));
 
+			// codes modifies the temp exe second
+            bool codes_success = InstallCodeMods(Directory.GetCurrentDirectory());
+
+			// copy the modded exe into the game files
+			File.Copy(temp_exe_path, true_exe_path, true);
+
+			// delete the temporary exe
+			File.Delete(temp_exe_path);
+
+            // save the game path for future use
+            File.WriteAllText(SAVED_INSTALL_TXT, true_exe_path);
+
+			// Wrap up
 			Log.WriteLine("Done.\n");
-			bool[] output = { assets_success, codes_success, hex_success, sounds_success };
+			bool[] output = { assets_success, sounds_success, hex_success, codes_success };
 			return output;
 		}
 
-		private static (string? exe_path, bool has_error) GetEXEPath(string? cli_arg)
+		private static string? SetUpEXE()
 		{
-			// Verify the input path
-			// First, check the arg
-			string? output_path = cli_arg?.Replace("\"", "").Trim();
-			if (output_path == null || !File.Exists(output_path))
-			{
-				// If the arg is invalid, check the text file
-				if (File.Exists(SAVED_INSTALL_TXT))
-					output_path = File.ReadAllText(SAVED_INSTALL_TXT).Replace("\"", "").Trim();
+			string? true_exe_path = null;
+			// check the text file
+			if (File.Exists(SAVED_INSTALL_TXT))
+                true_exe_path = File.ReadAllText(SAVED_INSTALL_TXT).Replace("\"", "").Trim();
 
-				// If the saved path isn't valid, ask for a path
-				if (!File.Exists(output_path))
+			// If the saved path isn't valid, ask for a path
+			if (!File.Exists(true_exe_path))
+			{
+				true_exe_path = RequestEXEPathFromUser();
+				Log.WriteLine("");
+				// If the manual path is not valid, output an error and exit
+				if (!File.Exists(true_exe_path))
 				{
-					output_path = RequestEXEPathFromUser();
-					Log.WriteLine("");
-					// If the manual path is not valid, output an error and exit
-					if (!File.Exists(output_path))
-					{
-						Log.OutputError($"Invalid executable path:\n{output_path}\nExiting program...\n");
-						return (null, true);
-					}
+					Log.OutputError($"Invalid executable path:\n{true_exe_path}\nExiting program...\n");
+					return null;
 				}
+				// assume the user is new and backup their exe
+				Log.WriteLine($"Backup EXE being saved at \"{SAVED_INSTALL_EXE}\"...");
+				File.Copy(true_exe_path, SAVED_INSTALL_EXE, true);
 			}
-			return (output_path, false);
+
+            // backup exe, but warn the user in case this is unintended
+            if (!File.Exists(SAVED_INSTALL_EXE))
+			{
+                Log.OutputError("Backup EXE not found!\nVerify the integrity of your game files in Steam before pressing Enter...");
+                Console.ReadKey();
+                Log.WriteLine($"Backup EXE being saved at \"{SAVED_INSTALL_EXE}\"");
+                File.Copy(true_exe_path, SAVED_INSTALL_EXE, true);
+            }
+
+            // output
+            return true_exe_path;
 		}
 
 		// output instructions for the user on how to find the exe
@@ -70,7 +111,7 @@ namespace ConnectModInstaller
 		private static string? RequestEXEPathFromUser()
 		{
 			Log.WriteLine(
-				$"Please input the path of your installation's \"{GAME_EXE_FILE_NAME}\" file.\n" +
+				$"Please input the path of your installation's vanilla \"{GAME_EXE_FILE_NAME}\" file.\n" +
 				"To get the file path, in Steam, Right Click on the game in your Library, then click Manage, then Browse Local Files.\n" +
 				$"Then, to obtain the path of the \"{GAME_EXE_FILE_NAME}\" file, click on it, then Shift + Right Click it and select Copy as Path.\n" +
 				"Then, paste it into this console and press Enter.\n" +
@@ -78,7 +119,7 @@ namespace ConnectModInstaller
 			return Log.ReadLine()?.Replace("\"", "").Trim();
 		}
 
-		private static bool InstallAssetMods(string? game_dir)
+		private static bool InstallAssetMods(string? true_game_dir)
 		{
 			// Verify all prereqs
 			// Check if mods folder exists
@@ -88,7 +129,7 @@ namespace ConnectModInstaller
 				return false;
 			}
 			// Check if game assets folder exists
-			string? game_asset_dir = Path.Combine(game_dir, GAME_ASSETS_DIR_NAME);
+			string? game_asset_dir = Path.Combine(true_game_dir, GAME_ASSETS_DIR_NAME);
 			if (!Directory.Exists(game_asset_dir))
 			{
 				Log.OutputError($"Game asset folder could not be found at:\n\"{game_asset_dir}\"\nSkipping asset mods...\n");
@@ -143,7 +184,7 @@ namespace ConnectModInstaller
 			return true;
 		}
 
-		private static bool InstallCodeMods(string game_dir)
+		private static bool InstallCodeMods(string? temp_game_dir)
 		{
 			// get mod folders
             string[] edit_folder_paths = Directory.GetDirectories(MODS_CODE_DIR_NAME);
@@ -158,7 +199,7 @@ namespace ConnectModInstaller
 
             // set up args
             int total_mods = 0;
-            string args = $"\"{game_dir}\"";
+            string args = $"\"{temp_game_dir}\"";
 			foreach (string folder in edit_folder_paths)
 			{
                 // check for mod files
@@ -186,7 +227,7 @@ namespace ConnectModInstaller
 			Log.WriteToLog($"Running DKCedit with: {args}\n");
 			Process? apply_codes = Process.Start(new ProcessStartInfo()
             {
-                FileName = Path.Combine("dkcedit", "DKCedit.exe"),
+                FileName = Path.Combine(HELPER_EXE_DIR_NAME, "dkcedit", "DKCedit.exe"),
                 Arguments = args,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -195,12 +236,15 @@ namespace ConnectModInstaller
             Log.WriteToLog(log_output);
             apply_codes?.WaitForExit();
             apply_codes?.Close();
+			Log.WriteLine("");
             return true;
 		}
 
-		private static bool InstallHexEdits(string exe_path)
+		private static bool InstallHexEdits(string? temp_exe_path)
 		{
-			int total_mods = HexEditor.ApplyMods(MODS_HEX_DIR_NAME, exe_path);
+			Log.WriteLine("Installing hex edits...");
+			int total_mods = HexEditor.ApplyMods(MODS_HEX_DIR_NAME, temp_exe_path);
+			Log.WriteLine($"Writing {total_mods} hex {(total_mods == 1 ? "edit" : "edits")}...\n");
 			return (total_mods > 0);
 		}
 
@@ -335,7 +379,7 @@ namespace ConnectModInstaller
             // run command
             Process? extract = Process.Start(new ProcessStartInfo()
             {
-                FileName = Path.Combine("vgmstream", "vgmstream-cli.exe"),
+                FileName = Path.Combine(HELPER_EXE_DIR_NAME, "vgmstream", "vgmstream-cli.exe"),
                 Arguments = $"-o \"{output_folder}\\?s-?n.hca\" -L -S 0 {file_path}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -383,7 +427,7 @@ namespace ConnectModInstaller
             {
                 Process? convert = Process.Start(new ProcessStartInfo()
                 {
-                    FileName = Path.Combine("criatomencd", "criatomencd.exe"),
+                    FileName = Path.Combine(HELPER_EXE_DIR_NAME, "criatomencd", "criatomencd.exe"),
                     Arguments = $"\"{file_path.Trim('\"').Trim()}\" -lps={loop_start} -lpe={loop_end} -id=1 -keycode=104863924750642073 {output_file}",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -397,7 +441,7 @@ namespace ConnectModInstaller
             {
                 Process? convert = Process.Start(new ProcessStartInfo()
                 {
-                    FileName = Path.Combine("criatomencd", "criatomencd.exe"),
+                    FileName = Path.Combine(HELPER_EXE_DIR_NAME, "criatomencd", "criatomencd.exe"),
                     Arguments = $"\"{file_path.Trim('\"').Trim()}\" -id=1 -keycode=104863924750642073 {output_file}",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -419,7 +463,7 @@ namespace ConnectModInstaller
             {
                 Process? encode = Process.Start(new ProcessStartInfo()
                 {
-                    FileName = Path.Combine("criatomencd", "criatomencd.exe"),
+                    FileName = Path.Combine(HELPER_EXE_DIR_NAME, "criatomencd", "criatomencd.exe"),
                     Arguments = $"\"{sound_dir_path.Replace('\"', ' ').Trim()}\" -acb -keycode=104863924750642073 -id=1 {output_file_prefix}.awb",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -434,7 +478,7 @@ namespace ConnectModInstaller
             {
                 Process? encode = Process.Start(new ProcessStartInfo()
                 {
-                    FileName = Path.Combine("criatomencd", "criatomencd.exe"),
+                    FileName = Path.Combine(HELPER_EXE_DIR_NAME, "criatomencd", "criatomencd.exe"),
                     Arguments = $"\"{sound_dir_path.Replace('\"', ' ').Trim()}\" -keycode=104863924750642073 -id=1 {output_file_prefix}.awb",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,

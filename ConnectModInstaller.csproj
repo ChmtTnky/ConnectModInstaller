@@ -20,49 +20,29 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="criatomencd\" />
+		<Folder Include="RequiredEXEs\" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="criatomencd\**">
+		<None Update="RequiredEXEs\**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="vgmstream\" />
+		<Folder Include="Mods\" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<None Update="vgmstream\**">
+		<None Update="Mods\**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="dkcedit\" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="dkcedit\**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="Assets\" />
+		<Folder Include="Backup\" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Update="Assets\**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-	
-	<ItemGroup>
-		<Folder Include="Codes\" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Update="Codes\**">
+		<None Update="Backup\**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
