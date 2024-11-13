@@ -1,0 +1,4 @@
+Each mod folder should have a set of folders inside, named by their type.
+For example, a mod may have an Assets, Hex, and Codes folder inside itself.
+If a mod folder does not have any of these *immediately* inside, it will not install.
+The program will not check subfolders for the mod types, only the folders immediately in the main mod folder.

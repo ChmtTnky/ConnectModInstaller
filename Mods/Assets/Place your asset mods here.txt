@@ -1,3 +1,0 @@
-This folder should contain files of various types and folders with more files.
-Try not to mix any mod folders, as they might mod the same file.
-If two mods modify the same files, the first one detected by the installer will be applied, and it will notify you in the log.

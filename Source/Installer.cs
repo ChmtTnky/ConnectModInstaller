@@ -7,10 +7,11 @@ namespace ConnectModInstaller
     public static class Installer
 	{
 		public static readonly string MODS_DIR_NAME = "Mods";
-		public static readonly string MODS_ASSETS_DIR_NAME = Path.Combine(MODS_DIR_NAME, "Assets");
-		public static readonly string MODS_CODE_DIR_NAME = Path.Combine(MODS_DIR_NAME, "Codes");
-		public static readonly string MODS_SOUND_DIR_NAME = Path.Combine(MODS_DIR_NAME, "Sounds");
-		public static readonly string MODS_HEX_DIR_NAME = Path.Combine(MODS_DIR_NAME, "Hex");
+		public static readonly string MODS_ASSETS_DIR_NAME = "Assets";
+		public static readonly string MODS_CODE_DIR_NAME = "Codes";
+		public static readonly string MODS_SOUND_DIR_NAME = "Sounds";
+		public static readonly string MODS_HEX_DIR_NAME = "Hex";
+		public static readonly string[] MODS_TYPE_DIR_ARRAY = { MODS_ASSETS_DIR_NAME, MODS_CODE_DIR_NAME, MODS_HEX_DIR_NAME, MODS_SOUND_DIR_NAME };
 
 		public static readonly string GAME_ASSETS_DIR_NAME = "assets";
 		public static readonly string GAME_EXE_FILE_NAME = "DkkStm.exe";
@@ -21,13 +22,14 @@ namespace ConnectModInstaller
 
 		public static readonly string HELPER_EXE_DIR_NAME = "RequiredEXEs";
 
-        public static bool[]? InstallMods()
+        public static List<bool>? InstallMods()
 		{
+			List<bool>? output = new List<bool>();
 			// check for mods folder
 			if (!Directory.Exists(MODS_DIR_NAME))
 			{
 				Log.OutputError("Could not finds Mods folder\nExiting program...");
-				return null;
+				return output;
 			}
 
 			// get and verify the path of the game exe
@@ -35,25 +37,35 @@ namespace ConnectModInstaller
 			if (true_exe_path == null)
 				return null;
 			string? true_game_dir = Path.GetDirectoryName(true_exe_path);
-			Log.WriteLine($"Using \"{true_game_dir}\" for the installation...\n");
+            // save the game path for future use
+            File.WriteAllText(SAVED_INSTALL_TXT, true_exe_path);
+            Log.WriteLine($"Using \"{true_game_dir}\" for the installation...\n");
 
-			// make copy of backup exe to modify
-			string temp_exe_path = Path.Combine(Directory.GetCurrentDirectory(), GAME_EXE_FILE_NAME);
+            // get folders of each mod type
+            Dictionary<string, List<string>>? mod_file_dirs = GetModFiles();
+            if (mod_file_dirs == null || mod_file_dirs.Sum(x => x.Value.Count) == 0)
+            {
+                Log.OutputError("No mod files found\nExiting Program...");
+                return null;
+            }
+
+            // make copy of backup exe to modify
+            string temp_exe_path = Path.Combine(Directory.GetCurrentDirectory(), GAME_EXE_FILE_NAME);
             File.Copy(SAVED_INSTALL_EXE, temp_exe_path, true);
 
 			// run the individual install functions
 
 			// assets modifies the raw game files
-			bool assets_success = InstallAssetMods(true_game_dir);
+			output.Add(InstallAssetMods(true_game_dir, mod_file_dirs[MODS_ASSETS_DIR_NAME]));
 
 			// sounds extracts then modifies the raw game files
-            bool sounds_success = InstallSoundMods();
+            output.Add(InstallSoundMods());
 
 			// hex edits modifies the temp exe first
-            bool hex_success = InstallHexEdits(Path.Combine(Directory.GetCurrentDirectory(), GAME_EXE_FILE_NAME));
+            output.Add(InstallHexEdits(Path.Combine(Directory.GetCurrentDirectory(), GAME_EXE_FILE_NAME), mod_file_dirs[MODS_HEX_DIR_NAME]));
 
 			// codes modifies the temp exe second
-            bool codes_success = InstallCodeMods(Directory.GetCurrentDirectory());
+            output.Add(InstallCodeMods(Directory.GetCurrentDirectory(), mod_file_dirs[MODS_CODE_DIR_NAME]));
 
 			// copy the modded exe into the game files
 			File.Copy(temp_exe_path, true_exe_path, true);
@@ -61,17 +73,18 @@ namespace ConnectModInstaller
 			// delete the temporary exe
 			File.Delete(temp_exe_path);
 
-            // save the game path for future use
-            File.WriteAllText(SAVED_INSTALL_TXT, true_exe_path);
-
 			// Wrap up
 			Log.WriteLine("Done.\n");
-			bool[] output = { assets_success, sounds_success, hex_success, codes_success };
 			return output;
 		}
 
+		// the logic that obtains the correct location of the exe to modify
 		private static string? SetUpEXE()
 		{
+			// guarantee backup folder exists
+			if (!Directory.Exists(SAVED_CONTENT_DIR))
+				Directory.CreateDirectory(SAVED_CONTENT_DIR);
+
 			string? true_exe_path = null;
 			// check the text file
 			if (File.Exists(SAVED_INSTALL_TXT))
@@ -106,6 +119,48 @@ namespace ConnectModInstaller
             return true_exe_path;
 		}
 
+		// get the relevant Assets, Sounds, Hex, and Codes folder for each mod
+		private static Dictionary<string, List<string>>? GetModFiles()
+		{
+			Log.WriteLine("Getting all mod files...");
+			Dictionary<string, List<string>> output = new Dictionary<string, List<string>>();
+
+			// initialize output dict
+			foreach (string mod_type in MODS_TYPE_DIR_ARRAY)
+				output.Add(mod_type, new List<string>());
+
+			// to start, get an array of all mod folders in the Mods folder
+			if (!Directory.Exists(MODS_DIR_NAME))
+			{
+				Log.OutputError($"{MODS_DIR_NAME} directory does not exist\nExiting Program");
+				return null;
+			}
+			string[] mod_folders = Directory.GetDirectories(MODS_DIR_NAME);
+
+			// for each mod folder, find the relevant folder names and add them to each list
+			foreach (string mod_folder in mod_folders)
+			{
+				bool has_mods = false;
+                // if subfolder of that type exists, add it to list of that type in dictionary
+                for (int i = 0; i < MODS_TYPE_DIR_ARRAY.Length; i++)
+				{
+					if (Directory.Exists(Path.Combine(mod_folder, MODS_TYPE_DIR_ARRAY[i])))
+					{
+						output[MODS_TYPE_DIR_ARRAY[i]].Add(Path.Combine(mod_folder, MODS_TYPE_DIR_ARRAY[i]));
+						has_mods = true;
+					}
+                }
+				if (has_mods)
+					Log.WriteLine($"Attemping to install \"{Path.GetFileName(mod_folder)}\"...");
+				else
+					Log.WriteLine($"\"{Path.GetFileName(mod_folder)}\" has no mods...");
+            }
+			Log.WriteLine("");
+
+			// output dictionary
+			return output;
+		}
+
 		// output instructions for the user on how to find the exe
 		// the exe is gotten over the game directory because it is easier for end users to find and get the path
 		private static string? RequestEXEPathFromUser()
@@ -119,17 +174,13 @@ namespace ConnectModInstaller
 			return Log.ReadLine()?.Replace("\"", "").Trim();
 		}
 
-		private static bool InstallAssetMods(string? true_game_dir)
+		// installs all file replacement mods for non-sound files and non-archive files
+		private static bool InstallAssetMods(string? true_game_dir, List<string> asset_folders)
 		{
-			// Verify all prereqs
-			// Check if mods folder exists
-			if (!Directory.Exists(MODS_ASSETS_DIR_NAME))
-			{
-				Log.OutputError($"Could not find the \"{MODS_ASSETS_DIR_NAME}\" folder.\nSkipping asset mods...\n");
-				return false;
-			}
-			// Check if game assets folder exists
-			string? game_asset_dir = Path.Combine(true_game_dir, GAME_ASSETS_DIR_NAME);
+            Log.WriteLine($"Installing asset mods...");
+            // Verify all prereqs
+            // Check if game assets folder exists
+            string? game_asset_dir = Path.Combine(true_game_dir, GAME_ASSETS_DIR_NAME);
 			if (!Directory.Exists(game_asset_dir))
 			{
 				Log.OutputError($"Game asset folder could not be found at:\n\"{game_asset_dir}\"\nSkipping asset mods...\n");
@@ -142,12 +193,22 @@ namespace ConnectModInstaller
 				Log.OutputError($"Game asset folder has no CPK files:\n\"{game_asset_dir}\"\nSkipping asset mods...\n");
 				return false;
 			}
-			Log.WriteLine($"Installing asset mods at \"{game_asset_dir}\"...");
 
-			// Generate dictionary of all mod files (file name, file_path)
-			Dictionary<string, string> mods = new();
-			IEnumerable<string> mod_files = Directory.EnumerateFiles(MODS_ASSETS_DIR_NAME, "*", SearchOption.AllDirectories);
-			foreach (string mod_file in mod_files)
+			// check if there are any assets to install
+			if (asset_folders.Count == 0 || asset_folders == null)
+			{
+				Log.WriteLine("No mod assets were found\nSkipping asset mods...");
+				return false;
+			}
+
+			// get a list of every asset file to install
+			List<string> mod_files = new();
+			foreach (string folder in asset_folders)
+				mod_files = mod_files.Concat(Directory.GetFiles(folder, "*", SearchOption.AllDirectories)).ToList();
+
+            // Generate dictionary of all mod files (file name, file_path)
+            Dictionary<string, string> mods = new();
+            foreach (string mod_file in mod_files)
 			{
 				// check for duplicate mod files
 				if (!mods.ContainsKey(Path.GetFileName(mod_file)))
@@ -157,10 +218,10 @@ namespace ConnectModInstaller
 			}
 			if (mods.Count == 0)
 			{
-				Log.OutputError($"\"{MODS_ASSETS_DIR_NAME}\" is empty.\nSkipping asset mods...\n");
+				Log.OutputError($"No mod assets found.\nSkipping asset mods...\n");
 				return false;
 			}
-			Log.WriteLine($"\nInstalling {mods.Count} asset {(mods.Count == 1 ? "file" : "files")}...\n");
+			Log.WriteLine($"Found {mods.Count} asset {(mods.Count == 1 ? "file" : "files")}...");
 
 			// patch all cpks in the asset directory
 			Parallel.For(0, cpk_paths.Length, i =>
@@ -180,27 +241,30 @@ namespace ConnectModInstaller
 					Log.WriteLine($"Skipping {Path.GetFileName(cpk_paths[i])}...");
 			});
 
-			Log.WriteLine("\nFinished installing asset mods...\n");
+			Log.WriteLine("");
 			return true;
 		}
 
-		private static bool InstallCodeMods(string? temp_game_dir)
+		// uses dkcedit to install all code mods
+		private static bool InstallCodeMods(string? temp_game_dir, List<string> codes_folders)
 		{
-			// get mod folders
-            string[] edit_folder_paths = Directory.GetDirectories(MODS_CODE_DIR_NAME);
+            Log.WriteLine($"Installing code mods...");
+            // get folders with code mods in them
+            List<string> code_mod_dirs = new List<string>();
+			foreach (string folder in codes_folders)
+				code_mod_dirs = code_mod_dirs.Concat(Directory.GetDirectories(folder)).ToList();
 
 			// check for mods
-			if (edit_folder_paths.Length == 0)
+			if (code_mod_dirs.Count == 0)
 			{
                 Log.WriteLine($"Codes folder has no subdirectories\nSkipping code mods...\n");
                 return false;
             }
-			Log.WriteLine($"Installing code mods...");
 
             // set up args
             int total_mods = 0;
             string args = $"\"{temp_game_dir}\"";
-			foreach (string folder in edit_folder_paths)
+			foreach (string folder in code_mod_dirs)
 			{
                 // check for mod files
                 if (!File.Exists(Path.Combine(folder, "mod.bin")))
@@ -223,7 +287,7 @@ namespace ConnectModInstaller
 				total_mods++;
 			}
 			// run command
-			Log.WriteLine($"Applying {total_mods} code {(total_mods == 1 ? "mod" : "mods")}...");
+			Log.WriteLine($"Injecting {total_mods} code {(total_mods == 1 ? "mod" : "mods")}...");
 			Log.WriteToLog($"Running DKCedit with: {args}\n");
 			Process? apply_codes = Process.Start(new ProcessStartInfo()
             {
@@ -240,10 +304,11 @@ namespace ConnectModInstaller
             return true;
 		}
 
-		private static bool InstallHexEdits(string? temp_exe_path)
+		// uses the hex editor to apply all hex edits
+		private static bool InstallHexEdits(string? temp_exe_path, List<string> hex_folders)
 		{
 			Log.WriteLine("Installing hex edits...");
-			int total_mods = HexEditor.ApplyMods(MODS_HEX_DIR_NAME, temp_exe_path);
+			int total_mods = HexEditor.ApplyMods(hex_folders, temp_exe_path);
 			Log.WriteLine($"Writing {total_mods} hex {(total_mods == 1 ? "edit" : "edits")}...\n");
 			return (total_mods > 0);
 		}

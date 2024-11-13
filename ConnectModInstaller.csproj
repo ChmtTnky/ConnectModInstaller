@@ -38,13 +38,4 @@
 		</None>
 	</ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="Backup\" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Update="Backup\**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
 </Project>

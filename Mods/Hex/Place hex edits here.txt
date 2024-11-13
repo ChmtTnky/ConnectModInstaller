@@ -1,3 +1,0 @@
-This folder should contain all of the .hex files included with your mods.
-The program will search everything in the folder including subdirectories, so it should detect any .hex file as long as it is somewhere in here.
-Even then, try your best not to mix your mods, as it will make it harder to remove specific mods from your install.

@@ -4,29 +4,35 @@ namespace ConnectModInstaller
 {
 	public static class HexEditor
 	{
-		public static int ApplyMods(string mod_path, string exe_path)
+		public static int ApplyMods(List<string> hex_edit_dirs, string exe_path)
 		{
-			// the directory probably exists by this point but we check it just in case
-			if (!Directory.Exists(mod_path))
-			{
-				Log.OutputError($"Could not find the \"{Installer.MODS_HEX_DIR_NAME}\" folder.\nSkipping hex edits...\n");
-				return 0;
-			}
-			// same with the exe path
+			// check if exe exists
 			if (!File.Exists(exe_path))
 			{
 				Log.OutputError($"Could not find the \"{Installer.GAME_EXE_FILE_NAME}\" file.\nSkipping hex edits...\n");
 				return 0;
 			}
 
-			// the entire list of files contained in the mod directory
-			string[] mod_files = Directory.GetFiles(mod_path, "*.hex", SearchOption.AllDirectories);
-			// quick escape if no files are found
-			if (mod_files.Length == 0)
+            // check if there are any dirs to install from
+            if (hex_edit_dirs.Count == 0 || hex_edit_dirs == null)
+            {
+                Log.WriteLine($"No hex edits were found\nSkipping hex edits...\n");
+                return 0;
+            }
+
+            // the entire list of files contained in the mod directory
+            List<string> mod_files = new List<string>();
+			foreach (string folder in hex_edit_dirs)
 			{
-				Log.WriteLine("Hex folder has no files\nSkipping hex edits...");
+				mod_files = mod_files.Concat(Directory.GetFiles(folder, "*.hex", SearchOption.AllDirectories)).ToList();
+			}
+			// quick escape if no files are found
+			if (mod_files.Count == 0)
+			{
+				Log.WriteLine("No hex edits were found\nSkipping hex edits...");
 				return 0;
 			}
+			Log.WriteLine($"Found {mod_files.Count} hex {(mod_files.Count == 1 ? "file" : "files")}....");
 
 			// we need this to be always sorted in order to have a smooth write later
 			// writing usually takes more time than reading so this is important
@@ -114,11 +120,11 @@ namespace ConnectModInstaller
 						return;
 					if (mod.exe_offset < other_mod.exe_offset && mod.exe_offset + mod.data_size > other_mod.exe_offset)
 					{
-						Log.OutputError($"Conflict found between {mod.file_path} and {other_mod.file_path}");
+						Log.WriteLine($"Conflict found between:\n\"{mod.file_path}\" and \"{other_mod.file_path}\"");
 					}
 					else if (mod.exe_offset == other_mod.exe_offset)
 					{
-						Log.OutputError($"Conflict found between {mod.file_path} and {other_mod.file_path}");
+						Log.WriteLine($"Conflict found between:\n\"{mod.file_path}\" and \"{other_mod.file_path}\"");
 					}
 				});
 

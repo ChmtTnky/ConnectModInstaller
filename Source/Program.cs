@@ -21,9 +21,9 @@
             Log.WriteLine(
                 "Dokapon Kingdom Connect PC Mod Installer\n" +
                 "----------------------------------------\n" +
-                $"Please place your asset mods in the \"{Installer.MODS_ASSETS_DIR_NAME}\" folder and your code mods in the \"{Installer.MODS_CODE_DIR_NAME}\" folder.\n" +
-                $"If you want to reset the install location, delete the \"{Installer.SAVED_INSTALL_TXT}\" file.\n" +
-                $"If you want to reset your modifications, reinstall the game or verify the integrity of the game files in Steam.\n");
+                $"Please place your mods in the \"{Installer.MODS_DIR_NAME}\" folder.\n" +
+                $"If you want to reset the install location, delete the \"{Installer.SAVED_CONTENT_DIR}\" folder.\n" +
+                $"If you want to reset or remove your mods, reinstall the game or verify the integrity of the game files in Steam.\n");
 
             Installer.InstallMods();
         }

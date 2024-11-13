@@ -8,7 +8,9 @@ namespace ConnectModInstaller
 
         public static void InitializeLogs()
         {
-            log = File.Open("log.txt", FileMode.Create, FileAccess.Write);
+            if (!Directory.Exists("Logs"))
+                Directory.CreateDirectory("Logs");
+            log = File.Open(Path.Combine("Logs", $"log-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}.txt"), FileMode.Create, FileAccess.Write);
         }
 
         public static void Shutdown()
