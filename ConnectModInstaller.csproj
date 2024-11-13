@@ -13,12 +13,6 @@
 	<Content Include="ConnectModInstaller.ico" />
   </ItemGroup>
 
-  <ItemGroup>
-	<PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0">
-	  <TreatAsUsed>true</TreatAsUsed>
-	</PackageReference>
-  </ItemGroup>
-
 	<ItemGroup>
 		<Folder Include="RequiredEXEs\" />
 	</ItemGroup>

@@ -2,12 +2,12 @@
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
             // Set up logs
             Log.InitializeLogs();
 
-            RunInstaller(args);
+            RunInstaller();
             // Debug(args);
 
             Log.WriteLine("Press any key to close...");
@@ -15,7 +15,7 @@
             Console.ReadKey();
         }
 
-        private static void RunInstaller(string[] args)
+        private static void RunInstaller()
         {
             // Default message
             Log.WriteLine(
