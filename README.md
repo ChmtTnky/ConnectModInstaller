@@ -23,7 +23,7 @@ Place all of your desired mods in the Mods folder, then run the installer. The i
  - Files are not patched with new data, they are completely overwritten.
  - Entire CPK files will not be installed with this program.
  - Mods do not need to emulate the original filesystem of the CPK files to work properly.
- - Assets can be anywhere within the mod folder, including subdirectories.
+ - Assets can be anywhere within your Asset folder, including subdirectories.
 
 ### Code mods
  - Mods of this kind must be in isolated directories within the Codes folder.
@@ -48,7 +48,7 @@ Place all of your desired mods in the Mods folder, then run the installer. The i
  - The data section is written to the executable in the order specified in the .hex file.
  - Conflicting edits will be noted by the installer, but it will not prevent the edits from being applied.
  - Your mod file can be named anything as long as it has the .hex extension.
- - The installer will check for all .hex files in the Hex folder, even in subdirectories.
+ - The installer will check for all .hex files in your Hex folder, even in subdirectories.
 
 ## Future Plans
  - A simple cross-platform GUI
