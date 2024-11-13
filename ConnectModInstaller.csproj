@@ -26,6 +26,10 @@
 	<ItemGroup>
 		<Folder Include="Mods\" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.0" />
+	</ItemGroup>
 	<ItemGroup>
 		<None Update="Mods\**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
